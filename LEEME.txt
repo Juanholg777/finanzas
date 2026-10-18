@@ -1,0 +1,19 @@
+MIS FINANZAS (app instalable)
+
+Archivos: index.html, manifest.webmanifest, sw.js y los 3 iconos (.png).
+Deben quedar TODOS juntos en la misma carpeta, sin cambiarles el nombre.
+
+PUBLICAR GRATIS EN GITHUB PAGES
+1. Crea una cuenta en github.com y un repositorio nuevo (público), por ejemplo "finanzas".
+2. Pulsa "Add file" > "Upload files" y sube los 6 archivos (no el .zip, los archivos sueltos).
+3. En Settings > Pages, en "Branch" elige main y la carpeta / (root). Guarda.
+4. En 1 o 2 minutos tu app queda en https://TU-USUARIO.github.io/finanzas/
+
+INSTALAR EN EL CELULAR
+Android (Chrome): abre el enlace > menú ⋮ > "Instalar app" o "Agregar a la pantalla de inicio".
+iPhone (Safari): botón Compartir > "Agregar a pantalla de inicio".
+
+IMPORTANTE
+- Los datos se guardan en el dispositivo. Usa "Descargar respaldo" (en Resumen) de vez en cuando.
+- Para pasar tus datos de la versión anterior: descarga el respaldo allá y restáuralo aquí.
+- Si actualizas la app más adelante, cambia el número en sw.js (CACHE = "finanzas-v2") para que los celulares la actualicen.
