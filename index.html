@@ -164,26 +164,23 @@ function charts(by,out){
     h+='<div class="donut"><svg viewBox="0 0 42 42" role="img" aria-label="Gastos por categoría"><circle cx="21" cy="21" r="15.9155" fill="none" stroke="var(--line)" stroke-width="7"/>'+seg+'<text x="21" y="20.5" text-anchor="middle" class="dt1">Total</text><text x="21" y="26" text-anchor="middle" class="dt2">'+short(out)+'</text></svg><div class="leg">'
       +cats.map(function(c,i){return '<div class="lg"><i style="background:'+PAL[i%PAL.length]+'"></i><span>'+esc(c)+'</span><b>'+Math.round(by[c]/out*100)+'%</b></div>'}).join("")+'</div></div>';
   }
-  h+='</div><div class="card"><div class="mute">Ingresos y gastos · últimos 6 meses</div>';
-  var ms=[],i,mx=0;
-  for(i=5;i>=0;i--){
-    var d=new Date(cur.getFullYear(),cur.getMonth()-i,1),k=ym(d),a=0,b=0;
-    S.tx.forEach(function(t){if(t.date.slice(0,7)===k){if(t.type==="in")a+=t.amount;else b+=t.amount}});
-    ms.push({l:d.toLocaleDateString("es-CO",{month:"short"}).replace(".",""),a:a,b:b});
-    mx=Math.max(mx,a,b);
-  }
-  if(!mx){h+='<div class="empty">Aún no hay datos para graficar.</div>'}
+  h+='</div><div class="card"><div class="mute" style="text-transform:capitalize">Gastos por día · '+cur.toLocaleDateString("es-CO",{month:"long"})+'</div>';
+  var nd=new Date(cur.getFullYear(),cur.getMonth()+1,0).getDate(),dy=[],i,mx=0,pk=0;
+  for(i=0;i<=nd;i++)dy.push(0);
+  monthTx().forEach(function(t){if(t.type==="out"){dy[parseInt(t.date.slice(8,10),10)]+=t.amount}});
+  for(i=1;i<=nd;i++){if(dy[i]>mx){mx=dy[i];pk=i}}
+  if(!mx){h+='<div class="empty">Aún no hay gastos este mes.</div>'}
   else{
-    var g='',gw=320/6,bw=18,ph=110,base=135;
-    ms.forEach(function(m,j){
-      var x=j*gw+(gw-2*bw-3)/2,ha=m.a/mx*ph,hb=m.b/mx*ph;
-      g+='<rect class="bi" x="'+x.toFixed(1)+'" y="'+(base-ha).toFixed(1)+'" width="'+bw+'" height="'+Math.max(ha,m.a?2:0).toFixed(1)+'" rx="3"/>'
-       +'<rect class="bo" x="'+(x+bw+3).toFixed(1)+'" y="'+(base-hb).toFixed(1)+'" width="'+bw+'" height="'+Math.max(hb,m.b?2:0).toFixed(1)+'" rx="3"/>';
-      if(m.a)g+='<text class="bt" x="'+(x+bw/2).toFixed(1)+'" y="'+(base-ha-4).toFixed(1)+'">'+short(m.a)+'</text>';
-      if(m.b)g+='<text class="bt" x="'+(x+bw*1.5+3).toFixed(1)+'" y="'+(base-hb-4).toFixed(1)+'">'+short(m.b)+'</text>';
-      g+='<text class="bt" x="'+(j*gw+gw/2).toFixed(1)+'" y="152" style="text-transform:capitalize">'+esc(m.l)+'</text>';
-    });
-    h+='<svg class="ch" viewBox="0 0 320 160" role="img" aria-label="Ingresos y gastos por mes">'+g+'</svg><div class="key"><span><i style="background:var(--in)"></i>Ingresos</span><span><i style="background:var(--out)"></i>Gastos</span></div>';
+    var g='<line x1="0" x2="320" y1="135" y2="135" stroke="var(--line)"/>',gw=320/nd,bw=Math.max(gw-2,2),base=135,ph=105;
+    for(i=1;i<=nd;i++){
+      var hh=0,x=(i-1)*gw+(gw-bw)/2;
+      hh=dy[i]/mx*ph;
+      if(dy[i])g+='<rect class="bo" x="'+x.toFixed(1)+'" y="'+(base-hh).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(hh,2).toFixed(1)+'" rx="2"/>';
+      if(i===1||i%5===0)g+='<text class="bt" x="'+((i-1)*gw+gw/2).toFixed(1)+'" y="152">'+i+'</text>';
+    }
+    var px=Math.min(300,Math.max(20,(pk-1)*gw+gw/2));
+    g+='<text class="bt" x="'+px.toFixed(1)+'" y="'+(base-ph-6).toFixed(1)+'">'+short(mx)+'</text>';
+    h+='<svg class="ch" viewBox="0 0 320 160" role="img" aria-label="Gastos por día del mes">'+g+'</svg><div class="mute" style="margin-top:6px">Día de mayor gasto: '+pk+' · '+fmt.format(mx)+'</div>';
   }
   return h+'</div>';
 }
