@@ -51,6 +51,20 @@ input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid 
 .item small{display:block;color:var(--mute)}
 .x{border:0;background:none;color:var(--mute);font-size:20px;padding:4px 8px}
 .x.arm{color:var(--out);font-size:14px;font-weight:600}
+.donut{display:flex;align-items:center;gap:14px;margin-top:10px}
+.donut svg{width:150px;height:150px;flex:none}
+.leg{flex:1;min-width:0}
+.lg{display:flex;align-items:center;gap:8px;font-size:14px;padding:2px 0}
+.lg i{width:10px;height:10px;border-radius:3px;flex:none}
+.lg span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch{width:100%;height:auto;display:block;margin-top:8px}
+.bi{fill:var(--in)}.bo{fill:var(--out)}
+.bt{fill:var(--mute);font-size:10px;text-anchor:middle;font-family:inherit}
+.dt1{font-size:3.2px;fill:var(--mute);font-family:inherit}
+.dt2{font-size:5.5px;font-weight:700;fill:var(--ink);font-family:inherit}
+.key{display:flex;gap:16px;font-size:13px;color:var(--mute);margin-top:6px}
+.key i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+@media (max-width:380px){.donut{flex-direction:column;align-items:stretch}.donut svg{margin:0 auto}}
 .cat{margin:10px 0}
 .cat .t{height:8px;border-radius:5px;background:var(--line);margin-top:5px;overflow:hidden}
 .cat .t i{display:block;height:100%;background:var(--out)}
@@ -138,6 +152,41 @@ function monthTx(){var k=ym(cur);return S.tx.filter(function(t){return t.date.sl
 
 function renderCats(){$("cat").innerHTML=CATS[type].map(function(c){return "<option>"+c+"</option>"}).join("")}
 
+var PAL=["#1d7a68","#8f3b5f","#b98a1c","#3f6fb5","#7a5cb0","#d0752f","#5a8f3d","#a14a4a","#7b8794"];
+function short(n){return n>=1e6?(n/1e6).toFixed(1).replace(".0","")+"M":n>=1e3?Math.round(n/1e3)+"k":String(n)}
+function charts(by,out){
+  var h='<h2>Gráficas</h2><div class="card"><div class="mute">Gastos por categoría</div>';
+  var cats=Object.keys(by).sort(function(a,b){return by[b]-by[a]});
+  if(!out){h+='<div class="empty">Sin gastos este mes.</div>'}
+  else{
+    var off=25,seg="";
+    cats.forEach(function(c,i){var p=by[c]/out*100;seg+='<circle cx="21" cy="21" r="15.9155" fill="none" stroke="'+PAL[i%PAL.length]+'" stroke-width="7" stroke-dasharray="'+p.toFixed(3)+' '+(100-p).toFixed(3)+'" stroke-dashoffset="'+off.toFixed(3)+'"/>';off-=p});
+    h+='<div class="donut"><svg viewBox="0 0 42 42" role="img" aria-label="Gastos por categoría"><circle cx="21" cy="21" r="15.9155" fill="none" stroke="var(--line)" stroke-width="7"/>'+seg+'<text x="21" y="20.5" text-anchor="middle" class="dt1">Total</text><text x="21" y="26" text-anchor="middle" class="dt2">'+short(out)+'</text></svg><div class="leg">'
+      +cats.map(function(c,i){return '<div class="lg"><i style="background:'+PAL[i%PAL.length]+'"></i><span>'+esc(c)+'</span><b>'+Math.round(by[c]/out*100)+'%</b></div>'}).join("")+'</div></div>';
+  }
+  h+='</div><div class="card"><div class="mute">Ingresos y gastos · últimos 6 meses</div>';
+  var ms=[],i,mx=0;
+  for(i=5;i>=0;i--){
+    var d=new Date(cur.getFullYear(),cur.getMonth()-i,1),k=ym(d),a=0,b=0;
+    S.tx.forEach(function(t){if(t.date.slice(0,7)===k){if(t.type==="in")a+=t.amount;else b+=t.amount}});
+    ms.push({l:d.toLocaleDateString("es-CO",{month:"short"}).replace(".",""),a:a,b:b});
+    mx=Math.max(mx,a,b);
+  }
+  if(!mx){h+='<div class="empty">Aún no hay datos para graficar.</div>'}
+  else{
+    var g='',gw=320/6,bw=18,ph=110,base=135;
+    ms.forEach(function(m,j){
+      var x=j*gw+(gw-2*bw-3)/2,ha=m.a/mx*ph,hb=m.b/mx*ph;
+      g+='<rect class="bi" x="'+x.toFixed(1)+'" y="'+(base-ha).toFixed(1)+'" width="'+bw+'" height="'+Math.max(ha,m.a?2:0).toFixed(1)+'" rx="3"/>'
+       +'<rect class="bo" x="'+(x+bw+3).toFixed(1)+'" y="'+(base-hb).toFixed(1)+'" width="'+bw+'" height="'+Math.max(hb,m.b?2:0).toFixed(1)+'" rx="3"/>';
+      if(m.a)g+='<text class="bt" x="'+(x+bw/2).toFixed(1)+'" y="'+(base-ha-4).toFixed(1)+'">'+short(m.a)+'</text>';
+      if(m.b)g+='<text class="bt" x="'+(x+bw*1.5+3).toFixed(1)+'" y="'+(base-hb-4).toFixed(1)+'">'+short(m.b)+'</text>';
+      g+='<text class="bt" x="'+(j*gw+gw/2).toFixed(1)+'" y="152" style="text-transform:capitalize">'+esc(m.l)+'</text>';
+    });
+    h+='<svg class="ch" viewBox="0 0 320 160" role="img" aria-label="Ingresos y gastos por mes">'+g+'</svg><div class="key"><span><i style="background:var(--in)"></i>Ingresos</span><span><i style="background:var(--out)"></i>Gastos</span></div>';
+  }
+  return h+'</div>';
+}
 function renderRes(){
   var tx=monthTx(),inc=0,out=0,by={};
   tx.forEach(function(t){if(t.type==="in")inc+=t.amount;else{out+=t.amount;by[t.cat]=(by[t.cat]||0)+t.amount}});
@@ -152,7 +201,7 @@ function renderRes(){
   h+=next?'<div class="mute" style="margin-top:6px">Próximo pago: '+esc(next.name)+' · '+next.due+'</div>':'<div class="mute" style="margin-top:6px">Sin fechas de pago por vencer.</div>';
   h+='</div>';var fp=0,ft=0;S.fixed.forEach(function(f){ft+=f.amount;if(!fixPaid(f))fp+=f.amount});if(ft)h+='<div class="card"><div class="row"><span class="mute">Gastos fijos por pagar este mes</span><b class="out">'+fmt.format(fp)+'</b></div><div class="mute" style="margin-top:6px">De '+fmt.format(ft)+' en total · te quedarían '+fmt.format(bal-fp)+' libres</div></div>';h+='<h2>Gastos por categoría</h2><div class="card">';
   h+=cats.length?cats.map(function(c){return '<div class="cat"><div class="row"><span>'+esc(c)+'</span><span>'+fmt.format(by[c])+'</span></div><div class="t"><i style="width:'+(by[c]/out*100)+'%"></i></div></div>'}).join(""):'<div class="empty">Aún no hay gastos este mes. Registra el primero en Movimientos.</div>';
-  $("v-res").innerHTML=h+"</div>"+'<h2>Respaldo</h2><div class="card"><div class="mute">Tus datos viven solo en este dispositivo. Descarga un respaldo de vez en cuando, o para pasarlos a otro dispositivo.</div><div class="grid" style="margin-top:12px"><button class="btn sm" style="width:100%" data-exp="1">Descargar respaldo</button><button class="btn sm" style="width:100%" data-imp="1">Restaurar respaldo</button></div><input type="file" id="impf" accept=".json,application/json" class="hide"><div class="mute" id="bkmsg" style="margin-top:8px"></div></div>';
+  $("v-res").innerHTML=h+"</div>"+charts(by,out)+'<h2>Respaldo</h2><div class="card"><div class="mute">Tus datos viven solo en este dispositivo. Descarga un respaldo de vez en cuando, o para pasarlos a otro dispositivo.</div><div class="grid" style="margin-top:12px"><button class="btn sm" style="width:100%" data-exp="1">Descargar respaldo</button><button class="btn sm" style="width:100%" data-imp="1">Restaurar respaldo</button></div><input type="file" id="impf" accept=".json,application/json" class="hide"><div class="mute" id="bkmsg" style="margin-top:8px"></div></div>';
 }
 
 function renderTx(){
